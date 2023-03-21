@@ -1,0 +1,15 @@
+# VSCode
+.vscode
+
+#Phpstorm
+.idea
+
+# ignore all file .json
+*/__pycache__
+
+# ignore pyc file
+*.pyc
+**.__pycache__
+
+# ignore .npy file
+*.npy
