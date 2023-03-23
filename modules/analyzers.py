@@ -148,25 +148,56 @@ class Correlations():
         Return:
             np.ndarray: cross-correlation coefficient
         '''
-        std_0 = np.std(arr_0)
-        std_1 = np.std(arr_1)
+
         arr_0_zero_mean = AnalyzerBase.zero_mean(arr_0)
         arr_1_zero_mean = AnalyzerBase.zero_mean(arr_1)
         correlation = correlate(arr_0_zero_mean, arr_1_zero_mean, mode=mode)
 
-        def normalize_factor(mode: str = mode):
-            n_0, n_1 = arr_0.shape[0], arr_1.shape[0]
-            N = {
-                'same': max(n_0, n_1),
-                'valid': max(n_0, n_1) - min(n_0, n_1) + 1,
-                'full': n_0 + n_1 - 1
-            }
-            normalized_factor = min(n_0, n_1) * np.ones(N[mode])
-            # TODO: norm_func for full mode
-            # normalized_factor = np.vectorize(norm_func)(norm_arr)
+        def _normalized_factor_static() -> float:
+            '''
+            Calculate the normalized factor based 
+            on the approximate standard deviation
+
+            Return:
+                float: normalized factor
+            '''
+            var_ = lambda x: np.sqrt(np.sum((x - np.mean(x))**2))
+            var_0, var_1 = var_(arr_0), var_(arr_1)
+            normalized_factor = var_0 * var_1
             return normalized_factor
 
-        coefficient = correlation / (normalize_factor() * std_0 * std_1)
+        def _normalized_factor_dynamic() -> float:
+            '''
+            Calculate normalized factor based 
+            on pattern and sequence length
+
+            Return:
+                float: normalized factor
+            '''
+            n_0, n_1 = arr_0.shape[0], arr_1.shape[0]
+            n_, N_ = min(n_0, n_1), max(n_0, n_1)
+            std_0, std_1 = np.std(arr_0), np.std(arr_1)
+            normalized_array = np.ones(correlation.shape)
+
+            if mode == 'valid':
+                normalized_array = normalized_array * n_
+                normalized_factor = normalized_array * std_0 * std_1
+            else:
+                normalized_index = np.arange(1, n_0 + n_1, 1)
+                normalized_cond_ = lambda x: x if x < n_ else n_0 + n_1 - x if x > N_ else n_
+                normalized_array = np.vectorize(normalized_cond_)(
+                    normalized_index)
+                if mode == 'full':
+                    normalized_factor = normalized_array * std_0 * std_1
+                elif mode == 'same':
+                    sta = normalized_array.shape[0] // 2 - n_0 // 2
+                    end = sta + n_0
+                    normalized_array = normalized_array[sta:end]
+                    normalized_factor = normalized_array * std_0 * std_1
+
+            return normalized_factor
+
+        coefficient = correlation / _normalized_factor_dynamic()
         return coefficient
 
     @staticmethod

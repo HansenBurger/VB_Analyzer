@@ -1,25 +1,31 @@
 import numpy as np
 from scipy.signal import correlate
 
-# 创建一个简单的二维数组
-data = np.array([
-    [1, 2, 3],
-    [4, 5, 6],
-    [7, 8, 9]
-])
+in1 = np.array([0, 2, 0, 0, 2])
+in2 = np.array([2, 0, 2])
 
-def cross_correlation_matrix(arr):
-    n_rows = arr.shape[0]
-    corr_matrix = np.zeros((n_rows, n_rows))
-    
-    for i in range(n_rows):
-        for j in range(n_rows):
-            row_i = arr[i] - np.mean(arr[i])
-            row_j = arr[j] - np.mean(arr[j])
-            normalization_factor = np.sqrt(np.sum(row_i**2) * np.sum(row_j**2))
-            corr_matrix[i, j] = np.correlate(row_i, row_j) / normalization_factor
-    
-    return corr_matrix
+n_in1, n_in2 = in1.shape[0], in2.shape[0]
 
-result = cross_correlation_matrix(data)
-print(result)
+a = n_in2 // 2
+
+normalized_index = np.arange(1, n_in1 + n_in2, 1)
+normalized_cond_ = lambda x: x if x < min(
+    n_in1, n_in2) else n_in1 + n_in2 - x if x > max(n_in1, n_in2) else min(
+        n_in1, n_in2)
+normalized_array = np.vectorize(normalized_cond_)(normalized_index)
+
+zm = lambda x: x - np.mean(x)
+var_ = lambda x: np.sqrt(np.sum((zm(x))**2))
+in1_, in2_ = zm(in1), zm(in2)
+
+factor_1 = var_(in1_) * var_(in2_)
+factor_2 = np.std(in1) * np.std(in2) * min(len(in1_), len(in2_))
+factor_full = np.array(
+    [min(i,
+         min(n_in1, n_in2) - 1) + 1 for i in range(1, n_in1 + n_in2)])
+c = correlate(in1_, in2_, mode='full')
+c_1 = correlate(in1_, in2_, mode='same')
+
+lags = np.arange(-3 + 1, 5)
+
+a = 1
