@@ -231,11 +231,27 @@ class Correlations():
         return correlation
 
 
-class Coherence():
+class PCA():
+    pass
+
+
+class ICA():
+    pass
+
+
+class SpectrumAnalysis():
     @staticmethod
     def scipy_coherence(arr_0: np.ndarray, arr_1: np.ndarray) -> tuple:
         f, Cxy = coherence(arr_0, arr_1, fs=1000, nperseg=64, noverlap=32)
         return f, Cxy
+
+    @staticmethod
+    def segmented_preprocessing(arr: np.ndarray,
+                                nperseg: int = 128,
+                                noverlap: int = None,
+                                window: str = None,
+                                detrend: bool = True):
+        pass
 
     @staticmethod
     def cross_coherence(arr_0: np.ndarray,
@@ -266,6 +282,7 @@ class Coherence():
         csd = np.zeros(nperseg // 2 + 1, dtype=complex)
 
         window = getattr(np, window_name)(nperseg)
+        # window = get_window(window_name, nperseg)
         n_segments = (len(arr_0) - noverlap) // (nperseg - noverlap)
 
         for i in range(n_segments):
